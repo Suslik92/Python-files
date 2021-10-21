@@ -17,14 +17,14 @@ for x in range (6):
 #         time.sleep(0.25)
 #     else:
 #         print ("Online")
-#         time.sleep(0.25) 
-# 
+#         time.sleep(0.25)
+#
 # #if GPIO.input(17):
 #     #print ("Online")
 # #else:
 #     #print ("Offline")
-#     
+#
 # GPIO.setup(18, GPIO.OUT)
 # GPIO.output(18, GPIO.HIGH)
-    
-GPIO.cleanup() #cleans 
+
+GPIO.cleanup() #cleans

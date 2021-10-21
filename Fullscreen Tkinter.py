@@ -15,9 +15,11 @@ def rdy():
 
 def cntdwn_update(secs):
     if (secs):
-        label.configure(text="Greetings, calibrating sensors " +str(secs))
+        label.configure(text="Greetings,booting system & calibrating sensors " +str(secs))
         win.after(1000, cntdwn_update, secs-1)
-    
+
+
+
 
 win.geometry("650x250") #Set the geometry
 win.attributes('-fullscreen', True) #Create a fullscreen window
