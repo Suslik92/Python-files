@@ -57,7 +57,7 @@ def Send_AT_GPS(command,back,timeout):
 def Send_Coords_Message(phone_number,text_message):
     Send_AT_SMS("AT+CMGF=1","OK",1)
     answer = Send_AT_SMS("AT+CMGS=\""+phone_number+"\"",">",2)
-    if 1 == answer:     
+    if 1 == answer:
         text_message = 'One or more ignition tests have failed.\n\n' + Coords
         ser.write(text_message.encode())
         ser.write(b'\x1A')
@@ -72,7 +72,7 @@ def Send_Coords_Message(phone_number,text_message):
 def Send_Unlock_SMS (phone_number,text_message):
     Send_AT_SMS("AT+CMGF=1","OK",1)
     answer = Send_AT_SMS("AT+CMGS=\""+phone_number+"\"",">",2)
-    if 1 == answer:     
+    if 1 == answer:
         text_message = 'To bypass the system and authorize ignition, reply with "Unlock" (case sensitive).'
         ser.write(text_message.encode())
         ser.write(b'\x1A')
