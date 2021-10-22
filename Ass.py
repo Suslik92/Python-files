@@ -213,6 +213,8 @@ class Matter(object):
         Log_Event('One or more verification methods have failed, sending SMS to +%d.'&phone_number)
         Send_Coords_Message(phone_number,text_message) #Send the first message, containing warning & lat long coordinates.
         Send_Unlock_SMS(phone_number,text_message) #Send the subsequent message, containing bypass information.
+        Send_AT_SMS('AT+CMGF=1','OK',2) #Set SMS read stage
+        Send_AT_SMS('AT+CMGD=,4', '+CMGD', 2) #Delete all messages
     def on_enter_Awaiting_Reply(self):
         print("Waiting 5 minutes for a reply SMS from %d."&phone_number)
         for attempts in range (5):
@@ -220,6 +222,7 @@ class Matter(object):
             if (override_flag):
                  SBS.to_passed() #Force to switch states due to override_flag
                  Log_Event("Override SMS received from %d."&phone_number")
+                 break
             else: time.sleep(10) #change to 5 for presentation
 
 
