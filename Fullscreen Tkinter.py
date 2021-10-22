@@ -15,7 +15,7 @@ def rdy():
 
 def cntdwn_update(secs):
     if (secs):
-        label.configure(text="Greetings,booting system & calibrating sensors " +str(secs))
+        label.configure(text="Greetings, booting system & calibrating sensors " +str(secs))
         win.after(1000, cntdwn_update, secs-1)
 
 
