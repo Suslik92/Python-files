@@ -1,14 +1,14 @@
 #from picamera import PiCamera
 import time
 import logging
-#import serial
+import serial
 from transitions import Machine
 import datetime as DT
-#import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 
-#ser = serial.Serial("/dev/ttyUSB2",115200)
-#ser.flushInput()
-#GPIO.setmode(GPIO.BCM)
+ser = serial.Serial("/dev/ttyUSB2",115200)
+ser.flushInput()
+GPIO.setmode(GPIO.BCM)
 logging.basicConfig(filename='Log.txt',filemode='w',
                     level=logging.CRITICAL,format='%(asctime)s -- %(message)s',
                     datefmt='%d/%m/%Y %H:%M:%S') #Change filemode to 'a' at presentation
@@ -132,7 +132,7 @@ def get_gps_position():
             rec_buff = ''
             Send_AT_GPS('AT+CGPS=0','OK',1)
             return False
-        time.sleep(1)
+        time.sleep(1.5)
 
 def NMEA2Latlong (NMEA): #Convert from NMEA word format to Lat & Long coordinates
     print (NMEA)
@@ -195,26 +195,25 @@ class Matter(object):
     def on_enter_Measurement(self):
         print("We've just entered Measurement")
         global Alc_Flag
-        #Alc_Flag = Take_Alcohol_Reading()
-        Alc_Flag = 0
+        Alc_Flag = Take_Alcohol_Reading()
         if (Alc_Flag): output_msg = 'Measurement taken, alcohol level above threshold.'
         else: output_msg = 'Measurement taken, alcohol level below threshold'
         Log_Event(output_msg)
     def on_exit_Measurement(self):
         print("Exiting Measurement")
-        #get_gps_position()
+        get_gps_position()
     def on_enter_Verification(self):
         #Image verification stuff
         print("We've just entered Verification")
         global Ident_Flag
-        Ident_Flag = 1
+        Ident_Flag = 0
         if (Ident_Flag): output_msg = 'Face not detected or unauthorized driver.'
         else: output_msg = 'Authorized driver identified.'
         Log_Event(output_msg)
     def on_enter_Passed(self):
         print("We've just entered Passed")
-        #Authorize_Ignition()
         Log_Event('Ignition authorizd, activating starter relay.')
+        Authorize_Ignition()
         Log_Event('System shutting down.')
         print ("exiting")
         exit()
@@ -222,22 +221,21 @@ class Matter(object):
         print("We've just entered Failed")
         #Display tkinter message according to which flag failed.
         Log_Event('One or more verification methods have failed, ignition remains locked.\n\t\t\tSending SMS to 0526920307.')
-        #Send_Coords_Message(phone_number,text_message) #Send the first message, containing warning & lat long coordinates.
-        #Send_Unlock_SMS(phone_number,text_message) #Send the subsequent message, containing bypass information.
+        Send_Coords_Message(phone_number,text_message) #Send the first message, containing warning & lat long coordinates.
+        Send_Unlock_SMS(phone_number,text_message) #Send the subsequent message, containing bypass information.
+        Send_AT_SMS('AT+CMGF=1','OK', 2)
+        Send_AT_SMS('AT+CMGD=,4','+CMGD', 2)
     def on_enter_Awaiting_Reply(self):
         print("Waiting 5 minutes for a reply SMS from 0526920307.")
         for attempts in range (5):
-            override_flag = False
-            #ReceiveShortMessage() #Wait for "Unlock"
+            ReceiveShortMessage() #Wait for "Unlock"
             if (override_flag):
                 Log_Event("Override SMS received from 0526920307.")
                 SBS.to_Passed() #Force to switch states due to override_flag
+                break
             else:
                 time.sleep(3) #change to 5 for presentation
                 print ("Waiting " + str(attempts))
-
-
-
 
 SBS = Matter()
 
@@ -282,5 +280,3 @@ else:
          #Both verification methods successful, go to 'Passed'
          SBS.Verification_Successful()
 GPIO.cleanup()
-print ('GPIO reset')
-print (override_flag)
