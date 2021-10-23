@@ -72,7 +72,7 @@ def Verify_Face():
                 #If a face was recognized, pull Ident_Flag low to signify
                 #an authorized driver
                 name = max(counts, key=counts.get)
-                if name in ['Ruslik', 'gal_gadot']:
+                if name in ['Ruslik', 'lucia_mendes', 'gal_gadot']:
                     global Ident_Flag
                     Ident_Flag = 0
 

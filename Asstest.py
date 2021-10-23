@@ -42,8 +42,7 @@ def Send_AT_SMS(command,back,timeout):
         if ('Unlock' in reply):
             global override_flag
             override_flag = True
-        elif ('+CMGD' not in back):
-            override_flag = False
+        elif ('+CMGD' not in back): override_flag = False
         print(rec_buff.decode())
         return 1
 
@@ -88,12 +87,9 @@ def Send_Unlock_SMS (phone_number,text_message):
         ser.write(text_message.encode())
         ser.write(b'\x1A')
         answer = Send_AT_SMS('','OK',20)
-        if 1 == answer:
-            print('send successfully')
-        else:
-            print('error')
-    else:
-        print('error%d'%answer)
+        if 1 == answer: print('send successfully')
+        else: print('error')
+    else: print('error%d'%answer)
 
 def ReceiveShortMessage():
     rec_buff = ''
@@ -143,13 +139,11 @@ def NMEA2Latlong (NMEA): #Convert from NMEA word format to Lat & Long coordinate
     DD_Lat = int(float(data[0])/100)
     MM_Lat = float(data[0])-DD_Lat*100
     Lat_Coor = DD_Lat+MM_Lat/60
-    if (data[1] == 'S'):
-        Lat_Coor = Lat_Coor*-1
+    if (data[1] == 'S'): Lat_Coor = Lat_Coor*-1
     DD_Long = int(float(data[2])/100)
     MM_Long = float(data[2])-DD_Long*100
     Long_Coor = DD_Long+MM_Long/60
-    if (data[3] == 'W'):
-        Long_Coor = Long_Coor*-1
+    if (data[3] == 'W'): Long_Coor = Long_Coor*-1
     Coords = 'The current location is Lat %f, Long %f.'%(Lat_Coor, Long_Coor)
     return Coords
 
@@ -176,57 +170,63 @@ def Take_Alcohol_Reading():
         #print('attempt' + str(i))
         time.sleep(2)
     #GPIO.cleanup()
-    if (Positive_Input >= 2):
-        return 1 #Return 1 for abnormal values
-    else:
-        return 0 #Return 0 for normal values
+    if (Positive_Input >= 2): return 1 #Return 1 for abnormal values
+    else: return 0 #Return 0 for normal values
+
+def Spam_Instructions(Instruction): #Spams instructions for the user...
+    for i in range (10): print(Instruction)
+    time.sleep(2)
 
 class Matter(object):
     def on_exit_Initial(self):
-        pass
-        #if (override_flag): machine.set_state('Passed')
+        Spam_Instructions("***  BOOTING  &  CALIBRATING  SENSORS, 10s  REMAINING  ***\n")
+        time.sleep(10)
     def on_enter_Start(self):
-        print("We've just entered Start") #For debugging purposes
+        #print("We've just entered Start") #For debugging purposes
         Log_Event('System initialized.') #Log the bootup
         if (override_flag):
             Log_Event("System disarmed between 0600-1900.")
             SBS.Timeframe()
-         #Display "calibrating sensors via tkinter"
-         #after 10s
     def on_enter_Measurement(self):
-        print("We've just entered Measurement")
+        #print("We've just entered Measurement")
         global Alc_Flag
+        Spam_Instructions("*** PLEASE  BLOW  INTO  THE  SENSOR ***\n")
         Alc_Flag = Take_Alcohol_Reading()
-        if (Alc_Flag): output_msg = 'Measurement taken, alcohol level above threshold.'
-        else: output_msg = 'Measurement taken, alcohol level below threshold'
+        if (Alc_Flag): output_msg = 'Measurement taken, alcohol level above threshold.' #For debugging purposes
+        else: output_msg = 'Measurement taken, alcohol level below threshold' #For debugging purposes
         Log_Event(output_msg)
     def on_exit_Measurement(self):
-        print("Exiting Measurement")
+        Spam_Instructions("*** ANALYZING  READING  ***\n")
+        #print("Exiting Measurement")
         get_gps_position()
     def on_enter_Verification(self):
-        print("We've just entered Verification")
+        #print("We've just entered Verification")
         global Ident_Flag
+        Spam_Instructions("*** PLEASE  LOOK  INTO  THE  CAMERA  ***\n")
         Ident_Flag = Verify_Face()
-        if (Ident_Flag): output_msg = 'Face not detected or unauthorized driver.'
-        else: output_msg = 'Authorized driver identified.'
+        if (Ident_Flag): output_msg = 'Face not detected or unauthorized driver.' #For debugging purposes
+        else: output_msg = 'Authorized driver identified.' #For debugging purposes
         Log_Event(output_msg)
     def on_enter_Passed(self):
-        print("We've just entered Passed")
+        #print("We've just entered Passed")
         Log_Event('Ignition authorizd, activating starter relay.')
+        Spam_Instructions("*** DRIVER  VERIFIED,  IGNITION  AUTHORIZED  ***\n")
         Authorize_Ignition()
         Log_Event('System shutting down.')
-        print ("exiting")
+        Spam_Instructions("*** SYSTEM  SHUTTING  DOWN  ***\n")
+        #print ("exiting")
         exit()
     def on_enter_Failed(self):
-        print("We've just entered Failed")
-        #Display tkinter message according to which flag failed.
+        #print("We've just entered Failed")
+        Spam_Instructions("*** MEASUREMENT OR VERIFICATION FAILED, SENDING SMS  ***\n")
         Log_Event('One or more verification methods have failed, ignition remains locked.\n\t\t\tSending SMS to 0526920307.')
         Send_Coords_Message(phone_number,text_message) #Send the first message, containing warning & lat long coordinates.
         Send_Unlock_SMS(phone_number,text_message) #Send the subsequent message, containing bypass information.
         Send_AT_SMS('AT+CMGF=1','OK', 2) #Set to read mode
         Send_AT_SMS('AT+CMGD=,4','+CMGD', 2) #Delete previous 'Unlock' messages
     def on_enter_Awaiting_Reply(self):
-        print("Waiting 5 minutes for a reply SMS from 0526920307.")
+        Spam_Instructions("*** AWAITING  REPLY  FROM  DESIGNATED  NUMBER  ***\n")
+        #print("Waiting 5 minutes for a reply SMS from 0526920307.")
         for attempts in range (5):
             ReceiveShortMessage() #Wait for "Unlock"
             if (override_flag):
