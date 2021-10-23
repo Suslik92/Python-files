@@ -1,9 +1,12 @@
-import time
-import math
+import RPi.GPIO as GPIO
 
-def Keks():
-    print ("sleep 2s")
-    time.sleep(2)
-    print ("done sleep 2s")
-    if (math.ceil(5.2) >= 8): return 1
-    else: return 0
+def Authorize_Ignition(): #Opens the relay
+    GPIO.setup(2, GPIO.OUT)
+    print ('Setting 2 high')
+    GPIO.output(2, GPIO.LOW)
+    time.sleep(5) #Time to allow ignition
+    print ('Setting 2 low')
+    GPIO.output(2, GPIO.High)
+
+Authorize_Ignition()
+GPIO.cleanup()
