@@ -1,0 +1,5 @@
+23/10/2021 21:59:04 -- System initialized.
+23/10/2021 21:59:10 -- Measurement taken, alcohol level below threshold
+23/10/2021 21:59:29 -- Face not detected or unauthorized driver.
+23/10/2021 21:59:29 -- One or more verification methods have failed, ignition remains locked.
+			Sending SMS to 0526920307.
