@@ -1,10 +1,10 @@
-#from picamera import PiCamera
 import time
 import logging
 import serial
 from transitions import Machine
 import datetime as DT
 import RPi.GPIO as GPIO
+from pi_face_recognition import Verify_Face
 
 ser = serial.Serial("/dev/ttyUSB2",115200)
 ser.flushInput()
@@ -203,10 +203,9 @@ class Matter(object):
         print("Exiting Measurement")
         get_gps_position()
     def on_enter_Verification(self):
-        #Image verification stuff
         print("We've just entered Verification")
         global Ident_Flag
-        Ident_Flag = 0
+        Ident_Flag = Verify_Face():
         if (Ident_Flag): output_msg = 'Face not detected or unauthorized driver.'
         else: output_msg = 'Authorized driver identified.'
         Log_Event(output_msg)
@@ -223,9 +222,9 @@ class Matter(object):
         Log_Event('One or more verification methods have failed, ignition remains locked.\n\t\t\tSending SMS to 0526920307.')
         Send_Coords_Message(phone_number,text_message) #Send the first message, containing warning & lat long coordinates.
         Send_Unlock_SMS(phone_number,text_message) #Send the subsequent message, containing bypass information.
-        Send_AT_SMS('AT+CMGF=1','OK', 2)
-        Send_AT_SMS('AT+CMGD=,4','+CMGD', 2)
-    def on_enter_Awaiting_Reply(self):
+        Send_AT_SMS('AT+CMGF=1','OK', 2) #Set to read mode
+        Send_AT_SMS('AT+CMGD=,4','+CMGD', 2) #Delete previous 'Unlock' messages
+    def on_enter_Awaiting_Reply(self):'
         print("Waiting 5 minutes for a reply SMS from 0526920307.")
         for attempts in range (5):
             ReceiveShortMessage() #Wait for "Unlock"
@@ -280,3 +279,4 @@ else:
          #Both verification methods successful, go to 'Passed'
          SBS.Verification_Successful()
 GPIO.cleanup()
+#GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
