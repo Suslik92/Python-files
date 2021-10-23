@@ -157,12 +157,13 @@ def Log_Event(Event_MSG): #Logs Event_MSG to Log.txt upon request
     logging.critical(Event_MSG)
 
 def Authorize_Ignition(): #Opens the relay
-    GPIO.setup(26, GPIO.OUT)
-    print ('Setting 26 high')
-    GPIO.output(26, GPIO.HIGH)
+    GPIO.setup(2, GPIO.OUT)
+    print ('Setting 2 low')
+    time.sleep(2) #To allow the message to sink in
+    GPIO.output(2, GPIO.LOW)
     time.sleep(5) #Time to allow ignition
-    print ('Setting 26 low')
-    GPIO.output(26, GPIO.LOW)
+    print ('Setting 26 high')
+    GPIO.output(2, GPIO.HIGH)
 
 def Take_Alcohol_Reading():
     GPIO.setmode(GPIO.BCM)
@@ -205,7 +206,7 @@ class Matter(object):
     def on_enter_Verification(self):
         print("We've just entered Verification")
         global Ident_Flag
-        Ident_Flag = Verify_Face():
+        Ident_Flag = Verify_Face()
         if (Ident_Flag): output_msg = 'Face not detected or unauthorized driver.'
         else: output_msg = 'Authorized driver identified.'
         Log_Event(output_msg)
@@ -224,7 +225,7 @@ class Matter(object):
         Send_Unlock_SMS(phone_number,text_message) #Send the subsequent message, containing bypass information.
         Send_AT_SMS('AT+CMGF=1','OK', 2) #Set to read mode
         Send_AT_SMS('AT+CMGD=,4','+CMGD', 2) #Delete previous 'Unlock' messages
-    def on_enter_Awaiting_Reply(self):'
+    def on_enter_Awaiting_Reply(self):
         print("Waiting 5 minutes for a reply SMS from 0526920307.")
         for attempts in range (5):
             ReceiveShortMessage() #Wait for "Unlock"
@@ -233,15 +234,19 @@ class Matter(object):
                 SBS.to_Passed() #Force to switch states due to override_flag
                 break
             else:
-                time.sleep(3) #change to 5 for presentation
-                print ("Waiting " + str(attempts))
+                time.sleep(3) #Change to 3 for presentation
+                print ("Waiting, " + str(attempts) + " attempts so far.")
+        print ("Warning! Restarting in 1 minute")
+        time.sleep(60)
+        Log_Event('Reply timer elapsed, restarting system.')
+        SBS.System_Timeout()
 
 SBS = Matter()
 
 #Initial - Dummy state.
-#Start - Sensor calibration and bootup stage
-#Measurement - Measures the alcohol content
-#Verification - Check the value from Measurement stage and cross-reference against known faces
+#Start - Sensor calibration and bootup stage.
+#Measurement - Measures the alcohol content.
+#Verification - Check the value from Measurement stage and cross-reference against known faces.
 #Passed - Passed both test, open relay.
 #Failed - Failed one of the tests, send SMS and keep ignition locked.
 #Awaiting_Reply - Wait for a response SMS for 5 minutes, then restart.
@@ -255,9 +260,8 @@ transitions = [
     { 'trigger': 'Measurement_Failed', 'source': 'Measurement', 'dest': 'Failed'},
     { 'trigger': 'Verification_Successful', 'source': 'Verification', 'dest': 'Passed' },
     { 'trigger': 'Verification_Failed', 'source': 'Verification', 'dest': 'Failed' },
-    { 'trigger': 'SMS_Sent', 'source': 'Failed', 'dest': 'Awaiting_Reply' }
-    #Success to restart
-    #Failed to restart
+    { 'trigger': 'SMS_Sent', 'source': 'Failed', 'dest': 'Awaiting_Reply' },
+    { 'trigger': 'System_Timeout', 'source': 'Awaiting_Reply', 'dest': 'Initial' }
 ]
 
 machine = Machine(SBS, states=states, transitions = transitions, initial='Initial')
